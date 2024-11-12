@@ -8,7 +8,7 @@ namespace ASP.NET_Core_App.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EmployeeController : Controller
+    public class EmployeeController : ControllerBase
     {
         private readonly AppDbContext dBContext;
         public EmployeeController(AppDbContext dbContext)
@@ -16,7 +16,7 @@ namespace ASP.NET_Core_App.Controllers
             this.dBContext = dbContext;
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         [HttpGet]
         public IActionResult GetAllEmployees()
         {
@@ -27,7 +27,7 @@ namespace ASP.NET_Core_App.Controllers
 
         [HttpGet]
         [Route("{id:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "admin")]
         public IActionResult GetEmployeeByID(Guid id)
         {
 
@@ -43,29 +43,29 @@ namespace ASP.NET_Core_App.Controllers
 
         [HttpPut]
         [Route("{id:guid}")]
-        public IActionResult UpdateEmployeeByID(Guid id, AddEmployee UpdateEmployee)
+        public IActionResult UpdateEmployeeByID(Guid id, UpdateEmployee UpdateEmployeeDto)
         {
             var employee = dBContext.Employee.Find(id);
             if (employee is null)
             {
                 return NotFound();
             }
-            employee.Name = UpdateEmployee.Name;
-            employee.Email = UpdateEmployee.Email;
-            employee.Phone = UpdateEmployee.Phone;
+            employee.Name = UpdateEmployeeDto.Name;
+            employee.Email = UpdateEmployeeDto.Email;
+            employee.Phone = UpdateEmployeeDto.Phone;
 
             dBContext.SaveChanges();
             return Ok(employee);
         }
 
         [HttpPost]
-        public IActionResult AddEmployee(AddEmployee AddEmployee)
+        public IActionResult AddEmployee(AddEmployee addEmployeeDto)
         {
             var employeeEntity = new Employee()
             {
-                Name = AddEmployee.Name,
-                Email = AddEmployee.Email,
-                Phone = AddEmployee.Phone
+                Name = addEmployeeDto.Name,
+                Email = addEmployeeDto.Email,
+                Phone = addEmployeeDto.Phone
             };
 
             dBContext.Employee.Add(employeeEntity);

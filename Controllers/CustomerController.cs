@@ -2,80 +2,95 @@
 using System.Threading.Tasks;
 using ASP.NET_Core_App.Services;
 using ASP.NET_Core_App.Token;
+using ASP.NET_Core_App.Data;
 using Microsoft.AspNetCore.Authorization;
+using ASP.NET_Core_App.Models;
 
 namespace ASP.NET_Core_App.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CustomerController : Controller
+    public class CustomerController : ControllerBase
     {
-        private readonly Service _customerService;
-
-        public CustomerController(Service customerService)
+        private readonly AppDbContext dBContext;
+        public CustomerController(AppDbContext dbContext)
         {
-            _customerService = customerService;
+            this.dBContext = dbContext;
         }
 
         // GET: api/customer
-        [Authorize(Roles = "Admin,User")]
+        [Authorize(Roles = "admin")]
         [HttpGet]
-        public async Task<IActionResult> GetAllCustomers()
+        public IActionResult GetAllCustomers()
         {
-            var customers = await _customerService.GetCustomersAsync();
-            return Ok(customers);
+            var allCustomers = dBContext.Customer.ToList();
+            return Ok(allCustomers);
         }
 
-        // GET: api/customer/{id}
-        [Authorize(Roles = "Admin,User")]
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCustomerById(string id)
+        [HttpGet]
+        [Route("{id:guid}")]
+        [Authorize(Roles = "admin")]
+        public IActionResult GetCustomerById(Guid id)
         {
-            var customer = await _customerService.GetCustomerByIdAsync(id);
-            return customer != null ? Ok(customer) : NotFound();
+
+            var customer = dBContext.Customer.Find(id);
+
+            if (customer is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(customer);
         }
 
-        // POST: api/customer
         [HttpPost]
-        [Authorize(Roles = "Admin")]
-
-        public async Task<IActionResult> CreateCustomer([FromBody] CustomerCreateOrUpdate newCustomer)
+        public IActionResult AddCustomer(AddCustomer addCustomerDto)
         {
-            // Log incoming headers for debugging
-            var headers = Request.Headers;
-            foreach (var header in headers)
+            var customerEntity = new Models.Customer()
             {
-                Console.WriteLine($"{header.Key}: {header.Value}");
+                Name = addCustomerDto.Name,
+                Email = addCustomerDto.Email,
+                Phone = addCustomerDto.Phone
+            };
+
+            dBContext.Customer.Add(customerEntity);
+            dBContext.SaveChanges();
+
+            return Ok(customerEntity);
+        }
+
+        [HttpPut]
+        [Route("{id:guid}")]
+        public IActionResult UpdateCustomerById(Guid id, UpdateCustomer UpdateCustomerDto)
+        {
+            var customer = dBContext.Customer.Find(id);
+            if (customer is null)
+            {
+                return NotFound();
+            }
+            customer.Name = UpdateCustomerDto.Name;
+            customer.Email = UpdateCustomerDto.Email;
+            customer.Phone = UpdateCustomerDto.Phone;
+
+            dBContext.SaveChanges();
+            return Ok(customer);
+        }
+
+        [HttpDelete]
+        [Route("{id:guid}")]
+        public IActionResult DeleteCustomerById(Guid id)
+        {
+
+            var customer = dBContext.Customer.Find(id);
+
+            if (customer is null)
+            {
+                return NotFound();
             }
 
-            // Retrieve the token from the Authorization header
-            //var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "").Trim();
-
-            // Temporary hard-coded token for testing
-            var token = "BlwgASYaowZyjOLZfdzIiWLJNqRiObj5bwKS2Jp15gQ=";
-
-
-            // Validate the token
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                return Unauthorized("Authorization token is required.");
-            }
-
-            if (!TokenHelper.ValidateToken(token))
-            {
-                return Unauthorized("Invalid token.");
-            }
-
-            // Create the customer if the token is valid
-            try
-            {
-                var createdCustomer = await _customerService.CreateCustomerAsync(newCustomer, token);
-                return CreatedAtAction(nameof(GetCustomerById), new { id = createdCustomer.Id }, createdCustomer);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            dBContext.Customer.Remove(customer);
+            dBContext.SaveChanges();
+            return Ok();
 
         }
     }

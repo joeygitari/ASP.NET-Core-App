@@ -115,6 +115,31 @@ namespace ASP.NET_Core_App.Services
         }
     }
 
+    public class Customer
+    {
+        public string No { get; set; }
+        public string Name { get; set; }
+        public string Contact { get; set; }
+        public string Post_Code { get; set; }
+        public string Country_Region_Code { get; set; }
+        public string Phone_No { get; set; }
+        public string Currency_Code { get; set; }
+        public string Salesperson_Code { get; set; }
+        public string Customer_Posting_Group { get; set; }
+        public string Last_Date_Modified { get; set; }
+    }
+
+    public class Employee
+    {
+        public string No { get; set; }
+        public string First_Name { get; set; }
+        public string Last_Name { get; set; }
+        public string Job_Title { get; set; }
+        public string Country_Region_Code { get; set; }
+        public string Phone_No { get; set; }
+        public string E_Mail { get; set; }
+    }
+
     public class CustomerCreateOrUpdate
     {
         public string No { get; set; }
